@@ -29,7 +29,9 @@ class Sequence
     	$aclArr = (array) explode(",", $acl);
     	foreach ($aclArr as $item) {
     		$x = explode("=", $item);
-    		$out[] = $x[0];
+            if ($x[0] != '') {
+        		$out[] = $x[0];
+            }
     	}
         return $out;
     }

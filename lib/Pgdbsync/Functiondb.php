@@ -33,9 +33,11 @@ class Functiondb
     		$typeNameArr = array();
     		$stmt = $this->_pdo->prepare("select typname from pg_type where oid = :OID");
     		foreach ($proargtypes as $type) {
-				$stmt->execute(array('OID' => $type));
-				$out = $stmt->fetchAll();
-				$typeNameArr[] = $out[0][0];
+                if ($type != '') {
+			        $stmt->execute(array('OID' => $type));
+			        $out = $stmt->fetchAll();
+			        $typeNameArr[] = $out[0][0];
+                }
     		}	
     		$types = implode(", ", $typeNameArr);
     	}

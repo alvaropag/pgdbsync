@@ -166,7 +166,7 @@ class Db
     	if (count((array) $functions) > 0) {
 	    	foreach ($functions as $function) {
 	    		$buffer = $master['functions'][$function]['definition'];
-	    		$summary['function']['create'][] = "{$schema}.{$function}";
+	    		$summary['function']['create'][] = "{$function}";
 	    		$diff[] = $buffer;
 	    	}
     	}
@@ -209,7 +209,7 @@ class Db
 		$buffer = "\nCREATE OR REPLACE VIEW {$schema}.{$view} AS \n";
 		$buffer.= "  " . $definition . ";";
 		$buffer.= "\nALTER TABLE {$schema}.{$view} OWNER TO {$owner};";
-		foreach ($master['views'][$view]['grants'] as $grant) {	
+		foreach ((array) $master['views'][$view]['grants'] as $grant) {	
 			$buffer.= "\nGRANT ALL ON TABLE {$schema}.{$view} TO {$grant};";
 		}
 		$diff[] = $buffer;
@@ -380,31 +380,6 @@ class Db
                 	$this->_createSequences($schema, $newSequences, $master, $diff, $summary);
                 }
                 
-            	// VIEWS
-            	$masterViews = isset($master['views']) ? array_keys((array) $master['views']) : array();
-                $slaveViews  = isset($slave['views']) ? array_keys((array) $slave['views']) : array();
-            	
-                // delete deleted views
-                $deletedViews = array_diff($slaveViews, $masterViews);
-                if (count($deletedViews) > 0) {
-                	$this->_deleteViews($schema, $deletedViews, $master, $diff, $summary);
-                }
-                
-                // create new views
-                $newViews = array_diff($masterViews, $slaveViews);
-                if (count($newViews) > 0) {
-                	$this->_createViews($schema, $newViews, $master, $diff, $summary);
-                }
-                
-                foreach ($masterViews as $view) {
-                	if (in_array($view, $newViews)) {
-                		continue;
-                	}
-                	
-                	if ($master['views'][$view]['definition'] !== $slave['views'][$view]['definition']) {
-                		$this->_createView($schema, $view, $master, $diff, $summary);
-                	}
-                }
             	// TABLES
             	
                 $masterTables = isset($master['tables']) ? array_keys((array) $master['tables']) : array();
@@ -451,6 +426,31 @@ class Db
                 		if ($masterType != $slaveType || $masterPrecission != $slavePrecission) {
                 			$this->_alterColumn($schema, $table, $column, $master, $diff, $summary);
                 		}
+                	}
+                }
+                // VIEWS
+            	$masterViews = isset($master['views']) ? array_keys((array) $master['views']) : array();
+                $slaveViews  = isset($slave['views']) ? array_keys((array) $slave['views']) : array();
+            	
+                // delete deleted views
+                $deletedViews = array_diff($slaveViews, $masterViews);
+                if (count($deletedViews) > 0) {
+                	$this->_deleteViews($schema, $deletedViews, $master, $diff, $summary);
+                }
+                
+                // create new views
+                $newViews = array_diff($masterViews, $slaveViews);
+                if (count($newViews) > 0) {
+                	$this->_createViews($schema, $newViews, $master, $diff, $summary);
+                }
+                
+                foreach ($masterViews as $view) {
+                	if (in_array($view, $newViews)) {
+                		continue;
+                	}
+                	
+                	if ($master['views'][$view]['definition'] !== $slave['views'][$view]['definition']) {
+                		$this->_createView($schema, $view, $master, $diff, $summary);
                 	}
                 }
                 $out[] = array(
